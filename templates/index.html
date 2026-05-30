@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎬 Shorts Maker Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#07070f;color:#fff;font-family:'Segoe UI',sans-serif;min-height:100vh}
+
+.header{
+  background:linear-gradient(135deg,#0d0d1a,#1a0a2e);
+  padding:18px 40px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:2px solid #e94560;
+  box-shadow:0 4px 40px rgba(233,69,96,0.4)
+}
+
+.logo{
+  font-size:26px;
+  font-weight:900;
+  background:linear-gradient(90deg,#e94560,#ff6b6b,#ffd93d);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  letter-spacing:3px
+}
+
+.badge{
+  background:linear-gradient(135deg,#e94560,#c62a47);
+  padding:6px 18px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:2px
+}
+
+.container{max-width:1100px;margin:0 auto;padding:40px 20px}
+
+.hero{text-align:center;margin-bottom:45px}
+
+.hero h1{
+  font-size:56px;
+  font-weight:900;
+  background:linear-gradient(135deg,#fff,#e94560,#ffd93d);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  margin-bottom:15px;
+  line-height:1.1
+}
+
+.hero p{font-size:17px;color:#7777aa;max-width:580px;margin:0 auto}
+
+.stats{
+  display:flex;
+  justify-content:center;
+  gap:35px;
+  padding:22px 30px;
+  background:linear-gradient(135deg,#0d0d1a,#1a1a2e);
+  border-radius:18px;
+  border:1px solid #1a1a3a;
+  margin-bottom:40px;
+  flex-wrap:wrap
+}
+
+.stat .num{
+  font-size:30px;
+  font-weight:900;
+  color:#e94560;
+  text-align:center
+}
+
+.stat .lbl{
+  font-size:11px;
+  color:#6666aa;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  text-align:center
+}
+
+.upload-zone{
+  background:linear-gradient(135deg,#0d0d1a,#1a1a2e);
+  border:2px dashed #e94560;
+  border-radius:24px;
+  padding:65px 40px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.3s;
+  margin-bottom:28px;
+  position:relative;
+  overflow:hidden
+}
+
+.upload-zone::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 50% 50%,rgba(233,69,96,0.04),transparent 70%);
+  pointer-events:none
+}
+
+.upload-zone:hover{
+  border-color:#ff8c8c;
+  transform:translateY(-3px);
+  box-shadow:0 25px 70px rgba(233,69,96,0.2)
+}
+
+.upload-zone.drag{
+  border-color:#ffd93d;
+  background:linear-gradient(135deg,#1a1a0d,#1a2a10)
+}
+
+.upload-icon{font-size:85px;margin-bottom:18px;display:block}
+
+.upload-zone h2{font-size:28px;font-weight:800;margin-bottom:10px}
+
+.upload-zone p{color:#6666aa;font-size:15px;margin-bottom:28px}
+
+.pick-btn{
+  background:linear-gradient(135deg,#e94560,#c62a47);
+  color:#fff;
+  border:none;
+  padding:15px 40px;
+  border-radius:50px;
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+  transition:all 0.3s;
+  box-shadow:0 8px 30px rgba(233,69,96,0.45);
+  letter-spacing:1px
+}
+
+.pick-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 14px 40px rgba(233,69,96,0.65)
+}
+
+#fileInput{display:none}
+
+.file-tag{
+  display:none;
+  margin-top:18px;
+  background:#0a0a1a;
+  border:1px solid #2a2a4a;
+  border-radius:10px;
+  padding:11px 20px;
+  font-size:14px;
+  color:#8888bb
+}
+
+.file-tag.show{display:block}
+
+.settings{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:18px;
+  margin-bottom:28px
+}
+
+.card{
+  background:linear-gradient(135deg,#0d0d1a,#1a1a2e);
+  border:1px solid #1a1a3a;
+  border-radius:16px;
+  padding:22px;
+  transition:all 0.3s
+}
+
+.card:hover{
+  border-color:#e94560;
+  box-shadow:0 8px 30px rgba(233,69,96,0.12)
+}
+
+.card label{
+  display:block;
+  font-size:11px;
+  font-weight:800;
+  color:#e94560;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:14px
+}
+
+.card select{
+  width:100%;
+  background:#070710;
+  border:1px solid #1a1a3a;
+  color:#fff;
+  padding:11px 14px;
+  border-radius:10px;
+  font-size:14px;
+  cursor:pointer;
+  outline:none;
+  transition:border-color 0.3s
+}
+
+.card select:focus{border-color:#e94560}
+.card select option{background:#0d0d1a}
+
+input[type=range]{
+  width:100%;
+  -webkit-appearance:none;
+  height:6px;
+  background:linear-gradient(90deg,#e94560,#1a1a3a);
+  border-radius:3px;
+  outline:none
+}
+
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:24px;
+  height:24px;
+  background:linear-gradient(135deg,#e94560,#c62a47);
+  border-radius:50%;
+  cursor:pointer;
+  box-shadow:0 2px 12px rgba(233,69,96,0.6)
+}
+
+.range-val{
+  text-align:center;
+  font-size:28px;
+  font-weight:900;
+  color:#e94560;
+  margin-top:10px
+}
+
+.preview{
+  margin-top:14px;
+  padding:14px;
+  border-radius:10px;
+  text-align:center;
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#000;
+  transition:all 0.3s
+}
+
+.toggle-wrap{display:flex;align-items:center;gap:14px;margin-top:8px}
+
+.sw{position:relative;width:58px;height:30px;flex-shrink:0}
+.sw input{display:none}
+.sl{
+  position:absolute;
+  cursor:pointer;
+  inset:0;
+  background:#1a1a3a;
+  border-radius:30px;
+  transition:0.3s
+}
+.sl:before{
+  content:'';
+  position:absolute;
+  height:22px;width:22px;
+  left:4px;bottom:4px;
+  background:#fff;
+  border-radius:50%;
+  transition:0.3s
+}
+input:checked+.sl{background:linear-gradient(135deg,#e94560,#c62a47)}
+input:checked+.sl:before{transform:translateX(28px)}
+.sw-lbl{color:#7777aa;font-size:13px}
+
+.go-btn{
+  width:100%;
+  background:linear-gradient(135deg,#e94560,#c62a47);
+  color:#fff;
+  border:none;
+  padding:22px;
+  border-radius:16px;
+  font-size:22px;
+  font-weight:900;
+  cursor:pointer;
+  transition:all 0.3s;
+  letter-spacing:3px;
+  box-shadow:0 12px 45px rgba(233,69,96,0.45);
+  margin-bottom:28px;
+  text-transform:uppercase
+}
+
+.go-btn:hover:not(:disabled){
+  transform:translateY(-4px);
+  box-shadow:0 18px 55px rgba(233,69,96,0.65)
+}
+
+.go-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+
+.prog-box{
+  display:none;
+  background:linear-gradient(135deg,#0d0d1a,#1a1a2e);
+  border:1px solid #1a1a3a;
+  border-radius:20px;
+  padding:35px;
+  margin-bottom:28px
+}
+
+.prog-box.show{display:block}
+
+.prog-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:18px
+}
+
+.prog-title{font-size:18px;font-weight:700}
+
+.prog-pct{
+  font-size:34px;
+  font-weight:900;
+  color:#e94560
+}
+
+.bar-bg{
+  background:#070710;
+  border-radius:50px;
+  height:16px;
+  overflow:hidden;
+  margin-bottom:14px
+}
+
+.bar-fill{
+  height:100%;
+  background:linear-gradient(90deg,#e94560,#ff6b6b,#ffd93d);
+  border-radius:50px;
+  width:0%;
+  transition:width 0.5s ease;
+  box-shadow:0 0 20px rgba(233,69,96,0.5)
+}
+
+.prog-msg{color:#7777aa;font-size:14px;text-align:center}
+
+.results{display:none;margin-bottom:30px}
+.results.show{display:block}
+
+.res-head{text-align:center;margin-bottom:28px}
+
+.res-head h2{
+  font-size:38px;
+  font-weight:900;
+  color:#ffd93d;
+  margin-bottom:8px
+}
+
+.res-head p{color:#7777aa}
+
+.clips-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+  gap:18px
+}
+
+.clip-card{
+  background:linear-gradient(135deg,#0d0d1a,#1a1a2e);
+  border:1px solid #1a1a3a;
+  border-radius:16px;
+  overflow:hidden;
+  transition:all 0.3s;
+  animation:fadeUp 0.5s ease forwards
+}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(18px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.clip-card:hover{
+  border-color:#e94560;
+  transform:translateY(-5px);
+  box-shadow:0 18px 45px rgba(233,69,96,0.22)
+}
+
+.clip-top{
+  background:linear-gradient(135deg,#e94560,#c62a47);
+  padding:14px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center
+}
+
+.clip-num{font-size:17px;font-weight:900;letter-spacing:1px}
+
+.clip-viral{
+  background:rgba(255,255,255,0.18);
+  padding:4px 12px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:700
+}
+
+.clip-body{padding:18px}
+
+.clip-meta{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:18px
+}
+
+.meta-box{
+  background:#070710;
+  padding:10px;
+  border-radius:8px;
+  text-align:center
+}
+
+.meta-box .ml{
+  font-size:10px;
+  color:#6666aa;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:4px
+}
+
+.meta-box .mv{font-size:15px;font-weight:700}
+
+.dl-btn{
+  width:100%;
+  background:linear-gradient(135deg,#00b4d8,#0077b6);
+  color:#fff;
+  border:none;
+  padding:13px;
+  border-radius:12px;
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+  transition:all 0.3s;
+  box-shadow:0 6px 22px rgba(0,180,216,0.35)
+}
+
+.dl-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 10px 32px rgba(0,180,216,0.55)
+}
+
+.err-box{
+  display:none;
+  background:linear-gradient(135deg,#200808,#2e1010);
+  border:1px solid #e94560;
+  border-radius:16px;
+  padding:28px;
+  text-align:center;
+  margin-bottom:20px
+}
+
+.err-box.show{display:block}
+
+.reset-btn{
+  width:100%;
+  background:linear-gradient(135deg,#1a1a2e,#0d0d1a);
+  color:#fff;
+  border:1px solid #1a1a3a;
+  padding:16px;
+  border-radius:12px;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+  margin-top:22px;
+  transition:all 0.3s
+}
+
+.reset-btn:hover{border-color:#e94560}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🎬 SHORTS MAKER PRO</div>
+  <div class="badge">✨ AI POWERED</div>
+</div>
+
+<div class="container">
+
+  <div class="hero">
+    <h1>Turn Any Long Video<br>Into Viral Shorts</h1>
+    <p>AI finds the best moments, crops to 9:16, adds captions — fully automatic</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num">9:16</div><div class="lbl">Auto Crop</div></div>
+    <div class="stat"><div class="num">AI</div><div class="lbl">Best Moments</div></div>
+    <div class="stat"><div class="num">6</div><div class="lbl">Caption Styles</div></div>
+    <div class="stat"><div class="num">1080p</div><div class="lbl">Max Quality</div></div>
+    <div class="stat"><div class="num">FREE</div><div class="lbl">Always</div></div>
+  </div>
+
+  <div class="upload-zone" id="zone">
+    <span class="upload-icon">🎬</span>
+    <h2>Drop Your Video Here</h2>
+    <p>MP4 · MOV · AVI · MKV · WEBM &nbsp;|&nbsp; Up to 2GB</p>
+    <button class="pick-btn" onclick="document.getElementById('fileInput').click()">
+      📁 CHOOSE VIDEO
+    </button>
+    <div class="file-tag" id="fileTag"></div>
+    <input type="file" id="fileInput" accept=".mp4,.mov,.avi,.mkv,.webm">
+  </div>
+
+  <div class="settings">
+
+    <div class="card">
+      <label>🎯 Number of Shorts</label>
+      <input type="range" id="numClips" min="1" max="10" value="5"
+        oninput="document.getElementById('rv').textContent=this.value">
+      <div class="range-val" id="rv">5</div>
+    </div>
+
+    <div class="card">
+      <label>🎨 Caption Style</label>
+      <select id="capStyle" onchange="updatePreview()">
+        <option value="bold_yellow">🟡 Bold Yellow — MrBeast Style</option>
+        <option value="white_clean">⚪ Clean White</option>
+        <option value="tiktok_style">📱 TikTok Bold</option>
+        <option value="highlight_box">📦 Highlight Box</option>
+        <option value="fire_red">🔴 Fire Red</option>
+        <option value="neon_green">💚 Neon Green</option>
+      </select>
+      <div class="preview" id="capPreview">
+        <span style="color:yellow;font-weight:900;font-size:20px;text-shadow:-2px -2px 0 #000,2px 2px 0 #000">
+          MRBEAST STYLE
+        </span>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>📺 Output Quality</label>
+      <select id="quality">
+        <option value="high">🔥 High — 1080×1920 (Best)</option>
+        <option value="medium">⚡ Medium — 720×1280</option>
+        <option value="low">💨 Low — 480×854 (Fastest)</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <label>💬 AI Captions</label>
+      <div class="toggle-wrap">
+        <label class="sw">
+          <input type="checkbox" id="capToggle" checked>
+          <span class="sl"></span>
+        </label>
+        <span class="sw-lbl" id="capLbl">ON — Auto-generate subtitles</span>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="go-btn" id="goBtn" onclick="start()" disabled>
+    🚀 CREATE MY SHORTS
+  </button>
+
+  <div class="err-box" id="errBox">
+    <div style="font-size:52px;margin-bottom:12px">❌</div>
+    <h3 style="color:#e94560;margin-bottom:10px;font-size:20px">Something Went Wrong</h3>
+    <p id="errMsg" style="color:#7777aa;font-size:14px"></p>
+    <button onclick="reset()" style="margin-top:16px;background:#e94560;color:#fff;border:none;padding:10px 28px;border-radius:10px;cursor:pointer;font-weight:800;font-size:14px">Try Again</button>
+  </div>
+
+  <div class="prog-box" id="progBox">
+    <div class="prog-top">
+      <div class="prog-title">⚙️ Processing Your Video...</div>
+      <div class="prog-pct" id="progPct">0%</div>
+    </div>
+    <div class="bar-bg">
+      <div class="bar-fill" id="barFill"></div>
+    </div>
+    <div class="prog-msg" id="progMsg">Starting up...</div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="res-head">
+      <h2>🎉 Your Shorts Are Ready!</h2>
+      <p>Download each clip and upload directly to YouTube Shorts or TikTok</p>
+    </div>
+    <div class="clips-grid" id="clipsGrid"></div>
+    <button class="reset-btn" onclick="reset()">🔄 Process Another Video</button>
+  </div>
+
+</div>
+
+<script>
+const socket = io();
+let file = null;
+
+const previews = {
+  bold_yellow: `<span style="color:yellow;font-weight:900;font-size:20px;text-shadow:-2px -2px 0 #000,2px 2px 0 #000,-2px 2px 0 #000,2px -2px 0 #000;font-family:Arial Black">MRBEAST STYLE</span>`,
+  white_clean: `<span style="color:white;font-weight:700;font-size:18px;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;font-family:Arial">Clean White Style</span>`,
+  tiktok_style: `<span style="color:white;font-weight:900;font-size:22px;text-shadow:-3px -3px 0 #000,3px 3px 0 #000,-3px 3px 0 #000,3px -3px 0 #000;font-family:Arial Black">TIKTOK BOLD</span>`,
+  highlight_box: `<span style="color:white;font-weight:800;font-size:18px;background:rgba(0,0,0,0.75);padding:6px 14px;border-radius:6px;font-family:Arial">Highlight Box Style</span>`,
+  fire_red: `<span style="color:#ff2200;font-weight:900;font-size:22px;text-shadow:-3px -3px 0 #000,3px 3px 0 #000;font-family:Arial Black">FIRE RED STYLE</span>`,
+  neon_green: `<span style="color:#00FF41;font-weight:900;font-size:20px;text-shadow:-2px -2px 0 #000,2px 2px 0 #000;font-family:Arial Black">NEON GREEN</span>`
+};
+
+function updatePreview(){
+  const s = document.getElementById('capStyle').value;
+  document.getElementById('capPreview').innerHTML = previews[s] || '';
+}
+
+document.getElementById('capToggle').addEventListener('change', function(){
+  document.getElementById('capLbl').textContent = this.checked
+    ? 'ON — Auto-generate subtitles'
+    : 'OFF — Faster processing';
+});
+
+const zone = document.getElementById('zone');
+const fi = document.getElementById('fileInput');
+
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag');
+  if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
+fi.addEventListener('change', () => { if(fi.files[0]) setFile(fi.files[0]); });
+
+function setFile(f){
+  file = f;
+  const tag = document.getElementById('fileTag');
+  tag.textContent = `📁 ${f.name} — ${(f.size/1024/1024).toFixed(1)} MB`;
+  tag.classList.add('show');
+  document.getElementById('goBtn').disabled = false;
+}
+
+function start(){
+  if(!file) return;
+  const fd = new FormData();
+  fd.append('video', file);
+  fd.append('num_clips', document.getElementById('numClips').value);
+  fd.append('caption_style', document.getElementById('capStyle').value);
+  fd.append('enable_captions', document.getElementById('capToggle').checked);
+  fd.append('quality', document.getElementById('quality').value);
+
+  document.getElementById('goBtn').disabled = true;
+  document.getElementById('progBox').classList.add('show');
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('errBox').classList.remove('show');
+
+  fetch('/upload', { method:'POST', body:fd })
+    .then(r => r.json())
+    .then(d => { if(d.error) showErr(d.error); })
+    .catch(e => showErr(e.message));
+}
+
+socket.on('progress', d => {
+  document.getElementById('barFill').style.width = d.percent + '%';
+  document.getElementById('progPct').textContent = d.percent + '%';
+  document.getElementById('progMsg').textContent = d.message;
+});
+
+socket.on('complete', d => {
+  document.getElementById('progBox').classList.remove('show');
+  document.getElementById('results').classList.add('show');
+  const grid = document.getElementById('clipsGrid');
+  grid.innerHTML = '';
+  d.clips.forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'clip-card';
+    card.style.animationDelay = (i * 0.1) + 's';
+    card.innerHTML = `
+      <div class="clip-top">
+        <span class="clip-num">🎬 SHORT #${c.clip_number}</span>
+        <span class="clip-viral">⚡ ${c.excitement_score}% Viral</span>
+      </div>
+      <div class="clip-body">
+        <div class="clip-meta">
+          <div class="meta-box"><div class="ml">Start</div><div class="mv">${c.start_time}</div></div>
+          <div class="meta-box"><div class="ml">End</div><div class="mv">${c.end_time}</div></div>
+        </div>
+        <button class="dl-btn" onclick="window.open('/download/${c.filename}','_blank')">
+          ⬇️ DOWNLOAD SHORT #${c.clip_number}
+        </button>
+      </div>`;
+    grid.appendChild(card);
+  });
+});
+
+socket.on('error', d => showErr(d.message));
+
+function showErr(msg){
+  document.getElementById('progBox').classList.remove('show');
+  document.getElementById('errBox').classList.add('show');
+  document.getElementById('errMsg').textContent = msg;
+  document.getElementById('goBtn').disabled = false;
+}
+
+function reset(){
+  file = null;
+  fi.value = '';
+  document.getElementById('fileTag').classList.remove('show');
+  document.getElementById('fileTag').textContent = '';
+  document.getElementById('goBtn').disabled = true;
+  document.getElementById('progBox').classList.remove('show');
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('errBox').classList.remove('show');
+  document.getElementById('barFill').style.width = '0%';
+  document.getElementById('progPct').textContent = '0%';
+}
+</script>
+</body>
+</html>
